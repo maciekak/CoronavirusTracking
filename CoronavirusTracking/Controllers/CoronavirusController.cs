@@ -6,6 +6,7 @@ using Coronavirus.Database.Managers;
 using Coronavirus.Database.Repository;
 using CoronavirusTracking.Dtos;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace CoronavirusTracking.Controllers
 {
@@ -16,6 +17,12 @@ namespace CoronavirusTracking.Controllers
         private readonly UserRepository _userRepository = new UserRepository();
         private readonly LocationRepository _locationRepository = new LocationRepository();
         private readonly InfectionManager _infectionManager = new InfectionManager();
+        private readonly AuthenticationManager _authenticationManager;
+
+        public CoronavirusController(IMemoryCache memoryCache)
+        {
+            _authenticationManager = new AuthenticationManager(memoryCache);
+        }
 
         // POST: api/Coronavirus
         [HttpPost("location")]
@@ -87,6 +94,9 @@ namespace CoronavirusTracking.Controllers
         [HttpPut("infect/{userId}")]
         public void SetInfectedUser(int userId)
         {
+            if (!Request.Headers.TryGetValue("Authentication", out var token)) return;
+            if(!_authenticationManager.IfUserIs(token, UserType.Doctor)) return;
+
             _userRepository.GetUserByUserId(userId).InfectionType = InfectionType.Infected;
             _infectionManager.MarkMetUsersAsInfected(userId);
         }
