@@ -2,6 +2,7 @@
 using System.Linq;
 using Coronavirus.Daos;
 using Coronavirus.Database.Entities;
+using Coronavirus.Database.Managers;
 using Coronavirus.Database.Repository;
 using CoronavirusTracking.Dtos;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,7 @@ namespace CoronavirusTracking.Controllers
     {
         private readonly UserRepository _userRepository = new UserRepository();
         private readonly LocationRepository _locationRepository = new LocationRepository();
+        private readonly InfectionManager _infectionManager = new InfectionManager();
 
         // POST: api/Coronavirus
         [HttpPost("location")]
@@ -85,7 +87,8 @@ namespace CoronavirusTracking.Controllers
         [HttpPut("infect/{userId}")]
         public void SetInfectedUser(int userId)
         {
-            _userRepository.GetUserByUserId(userId).IsInfected = true;
+            _userRepository.GetUserByUserId(userId).InfectionType = InfectionType.Infected;
+            _infectionManager.MarkMetUsersAsInfected(userId);
         }
 
         // DELETE: api/ApiWithActions/5
@@ -103,7 +106,7 @@ namespace CoronavirusTracking.Controllers
         {
             return _userRepository
                 .GetUserByDeviceId(deviceId)
-                .IsInfected;
+                .InfectionType != InfectionType.Healthy;
         }
     }
 }

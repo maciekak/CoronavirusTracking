@@ -13,7 +13,7 @@ namespace Coronavirus.Database.Repository
             {
                 AddDate = DateTime.Now,
                 DeviceId = deviceId,
-                IsAdmin = isAdmin,
+                UserType = isAdmin ? UserType.Doctor : UserType.Normal,
                 UserUuid = Guid.NewGuid(),
                 UserId = DatabaseTemp.UserIdCounter
             };
@@ -38,7 +38,13 @@ namespace Coronavirus.Database.Repository
 
         public IEnumerable<User> GetInfected()
         {
-            return DatabaseTemp.Users.Where(u => u.IsInfected);
+            return DatabaseTemp.Users.Where(u => u.InfectionType != InfectionType.Healthy);
+        }
+
+        public void Clear()
+        {
+            DatabaseTemp.Users.Clear();
+            DatabaseTemp.UserIdCounter = 1;
         }
     }
 }

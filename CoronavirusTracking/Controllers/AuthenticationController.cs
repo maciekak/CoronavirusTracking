@@ -2,6 +2,7 @@
 using Coronavirus.Database.Entities;
 using Coronavirus.Database.Repository;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace CoronavirusTracking.Controllers
 {
@@ -10,6 +11,11 @@ namespace CoronavirusTracking.Controllers
     public class AuthenticationController : ControllerBase
     {
         private readonly UserRepository _userRepository = new UserRepository();
+
+        public AuthenticationController(IMemoryCache memoryCache)
+        {
+
+        }
 
         // GET: api/Authentication/5
         [HttpGet("users")]

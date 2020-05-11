@@ -51,5 +51,11 @@ namespace Coronavirus.Database.Repository
                     Longitude = l.Geolocation.Longitude
                 });
         }
+
+        public void Clear()
+        {
+            DatabaseTemp.Locations.Clear();
+            DatabaseTemp.LocationIdCounter = 1;
+        }
     }
 }

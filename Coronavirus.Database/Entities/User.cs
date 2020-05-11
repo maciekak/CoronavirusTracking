@@ -7,8 +7,8 @@ namespace Coronavirus.Database.Entities
         public int UserId { get; set; }
         public string DeviceId { get; set; }
         public Guid UserUuid { get; set; }
-        public bool IsInfected { get; set; }
-        public bool IsAdmin { get; set; }
+        public InfectionType InfectionType { get; set; }
+        public UserType UserType { get; set; }
         public DateTime AddDate { get; set; }
     }
 }
