@@ -92,13 +92,14 @@ namespace CoronavirusTracking.Controllers
 
         // DELETE: api/ApiWithActions/5
         [HttpPut("infect/{userId}")]
-        public void SetInfectedUser(int userId)
+        public void SetInfectedUser(string deviceId)
         {
             if (!Request.Headers.TryGetValue("Authentication", out var token)) return;
             if(!_authenticationManager.IfUserIs(token, UserType.Doctor)) return;
 
-            _userRepository.GetUserByUserId(userId).InfectionType = InfectionType.Infected;
-            _infectionManager.MarkMetUsersAsInfected(userId);
+            var user = _userRepository.GetUserByDeviceId(deviceId);
+            user.InfectionType = InfectionType.Infected;
+            _infectionManager.MarkMetUsersAsInfected(user.UserId);
         }
 
         // DELETE: api/ApiWithActions/5
@@ -112,11 +113,10 @@ namespace CoronavirusTracking.Controllers
 
         // DELETE: api/ApiWithActions/5
         [HttpGet("infected/{deviceId}")]
-        public bool GetIfUserIsInfected(string deviceId)
+        public User GetIfUserIsInfected(string deviceId)
         {
             return _userRepository
-                .GetUserByDeviceId(deviceId)
-                .InfectionType != InfectionType.Healthy;
+                .GetUserByDeviceId(deviceId);
         }
     }
 }
