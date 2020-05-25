@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Coronavirus.Daos;
 using Coronavirus.Database.Repository;
+using CoronavirusTracking.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CoronavirusTracking.Controllers
@@ -29,6 +30,36 @@ namespace CoronavirusTracking.Controllers
         {
             _userRepository.Clear();
             _locationRepository.Clear();
+        }
+
+        [HttpPost("generate")]
+        public void Generate([FromBody] GenerationDto dto)
+        {
+            var random = new Random();
+            for (var i = 0; i <= dto.UsersQuantity; i++)
+            {
+                var beginDate = new DateTime(2020, 1, 1, 1, 1, 1);
+                var endDate = beginDate.AddSeconds(dto.LengthInSeconds);
+                _userRepository.AddUser(i.ToString(), false);
+                var userId = _userRepository.GetUserByDeviceId(i.ToString()).UserId;
+
+                var lastPosition = (random.NextDouble() * (dto.LatTo - dto.LatFrom) + dto.LatFrom,
+                    random.NextDouble() * (dto.LongTo - dto.LongFrom) + dto.LongFrom);
+                while (beginDate < endDate)
+                {
+
+                    _locationRepository.AddLocation(new LocationDao
+                    {
+                        Latitude = lastPosition.Item1,
+                        Longitude = lastPosition.Item2,
+                        UserId = userId,
+                        Time = beginDate
+                    });
+                    lastPosition = (lastPosition.Item1 + dto.StepLength * (random.NextDouble() * 2 - 1),
+                        lastPosition.Item2 + dto.StepLength * (random.NextDouble() * 2 - 1));
+                    beginDate = beginDate.AddSeconds(dto.StepInSeconds);
+                }
+            }
         }
 
         // GET: api/Test
