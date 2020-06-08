@@ -2,6 +2,6 @@
 {
     public enum InfectionType
     {
-        Healthy, Infected, HadContact
+        Healthy, Infected, HadContact, Recovered
     }
 }

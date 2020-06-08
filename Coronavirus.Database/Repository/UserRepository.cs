@@ -7,44 +7,44 @@ namespace Coronavirus.Database.Repository
 {
     public class UserRepository
     {
-        public void AddUser(string deviceId, bool isAdmin)
+        public void AddUser(string deviceId, string notificationId, bool isAdmin)
         {
             var user = new User
             {
                 AddDate = DateTime.Now,
                 DeviceId = deviceId,
+                NotificationId = notificationId,
                 UserType = isAdmin ? UserType.Doctor : UserType.Normal,
-                UserUuid = Guid.NewGuid(),
-                UserId = DatabaseTemp.UserIdCounter
+                UserId = Context.UserIdCounter
             };
-            DatabaseTemp.UserIdCounter++;
-            DatabaseTemp.Users.Add(user);
+            Context.UserIdCounter++;
+            Context.Users.Add(user);
         }
 
         public IEnumerable<User> GetUsers()
         {
-            return DatabaseTemp.Users.ToList();
+            return Context.Users.ToList();
         }
 
         public User GetUserByDeviceId(string deviceId)
         {
-            return DatabaseTemp.Users.FirstOrDefault(u => u.DeviceId == deviceId);
+            return Context.Users.FirstOrDefault(u => u.DeviceId == deviceId);
         }
 
         public User GetUserByUserId(int userId)
         {
-            return DatabaseTemp.Users.FirstOrDefault(u => u.UserId == userId);
+            return Context.Users.FirstOrDefault(u => u.UserId == userId);
         }
 
         public IEnumerable<User> GetInfected()
         {
-            return DatabaseTemp.Users.Where(u => u.InfectionType != InfectionType.Healthy);
+            return Context.Users.Where(u => u.InfectionType != InfectionType.Healthy);
         }
 
         public void Clear()
         {
-            DatabaseTemp.Users.Clear();
-            DatabaseTemp.UserIdCounter = 1;
+            Context.Users.Clear();
+            Context.UserIdCounter = 1;
         }
     }
 }

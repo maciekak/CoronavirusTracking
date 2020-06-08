@@ -9,23 +9,23 @@ namespace Coronavirus.Database.Repository
 
         public bool UserExists(string login, string password)
         {
-            return DatabaseTemp.Auths.Any(a => a.Login == login && a.Password == password);
+            return Context.Auths.Any(a => a.Login == login && a.Password == password);
         }
 
         public void AddAdmin(string login, string password, string deviceId)
         {
-            DatabaseTemp.Auths.Add(new Auth
+            Context.Auths.Add(new Auth
             {
                 Login = login,
                 Password = password,
-                UserId = DatabaseTemp.UserIdCounter
+                UserId = Context.UserIdCounter
             });
-            _userRepository.AddUser(deviceId, true);
+            _userRepository.AddUser(deviceId, "", true);
         }
 
         public int GetUserIdByLogin(string login)
         {
-            return DatabaseTemp.Auths.FirstOrDefault(a => a.Login == login)?.UserId ?? 0;
+            return Context.Auths.FirstOrDefault(a => a.Login == login)?.UserId ?? 0;
         }
     }
 }

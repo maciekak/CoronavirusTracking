@@ -21,6 +21,7 @@ namespace CoronavirusTracking
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+
                 });
     }
 }

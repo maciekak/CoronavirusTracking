@@ -95,11 +95,22 @@ namespace CoronavirusTracking.Controllers
         public void SetInfectedUser(string deviceId)
         {
             if (!Request.Headers.TryGetValue("Authentication", out var token)) return;
-            if(!_authenticationManager.IfUserIs(token, UserType.Doctor)) return;
+            if (!_authenticationManager.IfUserIs(token, UserType.Doctor)) return;
 
             var user = _userRepository.GetUserByDeviceId(deviceId);
             user.InfectionType = InfectionType.Infected;
             _infectionManager.MarkMetUsersAsInfected(user.UserId);
+        }
+
+        // DELETE: api/ApiWithActions/5
+        [HttpPut("recover/{userId}")]
+        public void SetRecoveredUser(string deviceId)
+        {
+            if (!Request.Headers.TryGetValue("Authentication", out var token)) return;
+            if (!_authenticationManager.IfUserIs(token, UserType.Doctor)) return;
+
+            var user = _userRepository.GetUserByDeviceId(deviceId);
+            _infectionManager.MarkUserAsRecovered(user.UserId);
         }
 
         // DELETE: api/ApiWithActions/5

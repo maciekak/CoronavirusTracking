@@ -10,5 +10,6 @@
         public int LengthInSeconds { get; set; } = 100;
         public int UsersQuantity { get; set; } = 10;
         public double StepLength { get; set; } = 5;
+        public int ContactQuantity { get; set; }
     }
 }

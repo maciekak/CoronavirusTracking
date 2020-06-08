@@ -39,9 +39,9 @@ namespace CoronavirusTracking.Controllers
 
         // PUT: api/Authentication/5
         [HttpPost("user")]
-        public void AddUser([FromBody] string deviceId)
+        public void AddUser([FromBody] AddUserDto user)
         {
-            _userRepository.AddUser(deviceId, false);
+            _userRepository.AddUser(user.DeviceId, user.NotificationId, false);
         }
 
         [HttpPost("login")]

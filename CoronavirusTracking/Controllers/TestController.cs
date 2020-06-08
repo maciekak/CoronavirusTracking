@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Coronavirus.Daos;
+using Coronavirus.Database;
+using Coronavirus.Database.Entities;
+using Coronavirus.Database.Managers;
 using Coronavirus.Database.Repository;
 using CoronavirusTracking.Dtos;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +17,24 @@ namespace CoronavirusTracking.Controllers
     {
         private readonly UserRepository _userRepository = new UserRepository();
         private readonly LocationRepository _locationRepository = new LocationRepository();
+        private readonly CubeRepository _cubeRepository = new CubeRepository();
+        private readonly InfectionManager _infectionManager = new InfectionManager();
+        private readonly CoronaContext _coronaContext;
+
+        private readonly double _longitudeUpBoundary = 25.0;
+        private readonly double _longitudeDownBoundary = 14.0;
+        private readonly double _latitudeUpBoundary = 55.0;
+        private readonly double _latitudeDownBoundary = 49.00;
+        private readonly DateTime _timeUpBoundary = new DateTime(2020, 11, 8, 10, 0, 0);
+        private readonly DateTime _timeDownBoundary = new DateTime(2020, 5, 8, 10, 0, 0);
+        private readonly double _longStep = 0.0007;
+        private readonly double _latStep = 0.0006;
+        private readonly TimeSpan _timeStep = new TimeSpan(0, 1, 0);
+
+        public TestController(CoronaContext coronaContext)
+        {
+            _coronaContext = coronaContext;
+        }
 
         private List<DateTime> GetTimes()
         {
@@ -30,24 +52,28 @@ namespace CoronavirusTracking.Controllers
         {
             _userRepository.Clear();
             _locationRepository.Clear();
+            _cubeRepository.Clear();
         }
 
         [HttpPost("generate")]
-        public void Generate([FromBody] GenerationDto dto)
+        public int Generate([FromBody] GenerationDto dto)
         {
+            var a = _infectionManager.GetDistance(_longitudeDownBoundary + _longStep, _latitudeDownBoundary + _latStep,
+                _longitudeDownBoundary, _latitudeDownBoundary);
             var random = new Random();
-            for (var i = 0; i <= dto.UsersQuantity; i++)
+            var contacted = new List<int>();
+            var i = 0;
+            for (; contacted.Count < dto.ContactQuantity; i++)
             {
-                var beginDate = new DateTime(2020, 1, 1, 1, 1, 1);
+                var beginDate = new DateTime(2020, 6, 10, 10, 10, 10);
                 var endDate = beginDate.AddSeconds(dto.LengthInSeconds);
-                _userRepository.AddUser(i.ToString(), false);
+                _userRepository.AddUser(i.ToString(), i.ToString(), false);
                 var userId = _userRepository.GetUserByDeviceId(i.ToString()).UserId;
 
                 var lastPosition = (random.NextDouble() * (dto.LatTo - dto.LatFrom) + dto.LatFrom,
                     random.NextDouble() * (dto.LongTo - dto.LongFrom) + dto.LongFrom);
                 while (beginDate < endDate)
                 {
-
                     _locationRepository.AddLocation(new LocationDao
                     {
                         Latitude = lastPosition.Item1,
@@ -59,425 +85,38 @@ namespace CoronavirusTracking.Controllers
                         lastPosition.Item2 + dto.StepLength * (random.NextDouble() * 2 - 1));
                     beginDate = beginDate.AddSeconds(dto.StepInSeconds);
                 }
+
+                var contact = _infectionManager.SimpleCheckUserWhoHadContact(userId);
+                if (contact.Count > 0)
+                {
+                    contacted.Add(userId);
+                    contacted.AddRange(contact);
+                    contacted = contacted.Distinct().ToList();
+                }
+
             }
+
+            return i;
         }
 
-        // GET: api/Test
-        [HttpGet("contact/none")]
-        public void TestNone()
+        [HttpGet("check/all")]
+        public string CheckIfAnyoneIsInfected()
         {
-            _userRepository.AddUser("1", false);
-            _userRepository.AddUser("2", false);
-            _userRepository.AddUser("3", false);
-            _userRepository.AddUser("4", false);
+            var users = _userRepository.GetUsers().Select(u => u.UserId).ToList();
+            var start = DateTime.Now;
+            var contacted1 = users
+                .SelectMany(u => _infectionManager.SimpleCheckUserWhoHadContact(u))
+                .Distinct()
+                .ToList();
+            var diff1 = (DateTime.Now - start).TotalMilliseconds;
 
-            var id1 = _userRepository.GetUserByDeviceId("1").UserId;
-            var id2 = _userRepository.GetUserByDeviceId("2").UserId;
-            var id3 = _userRepository.GetUserByDeviceId("3").UserId;
-            var id4 = _userRepository.GetUserByDeviceId("4").UserId;
-
-            var times = GetTimes();
-            var id = id1;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 2,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 2,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-
-
-            id = id2;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 5,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 6,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 5,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 6,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-
-
-            id = id3;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 10,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 13,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 16,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 19,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-
-
-            id = id4;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 16,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 20,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 10,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 13,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-
-
-        }
-
-        [HttpGet("contact/some")]
-        public void TestSome()
-        {
-            _userRepository.AddUser("5", false);
-            _userRepository.AddUser("6", false);
-            _userRepository.AddUser("7", false);
-            _userRepository.AddUser("8", false);
-
-            var id1 = _userRepository.GetUserByDeviceId("5").UserId;
-            var id2 = _userRepository.GetUserByDeviceId("6").UserId;
-            var id3 = _userRepository.GetUserByDeviceId("7").UserId;
-            var id4 = _userRepository.GetUserByDeviceId("8").UserId;
-
-            var times = GetTimes();
-            var id = id1;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 2,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 2,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-
-
-            id = id2;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 6,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 7,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 6,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 7,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-
-
-            id = id3;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 5,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 7,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 9,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 11,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-
-
-            id = id4;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 14,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 14,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 14,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 14,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-            
-        }
-
-        [HttpGet("contact/all")]
-        public void TestAll()
-        {
-            _userRepository.AddUser("9", false);
-            _userRepository.AddUser("10", false);
-            _userRepository.AddUser("11", false);
-            _userRepository.AddUser("12", false);
-
-            var id1 = _userRepository.GetUserByDeviceId("9").UserId;
-            var id2 = _userRepository.GetUserByDeviceId("10").UserId;
-            var id3 = _userRepository.GetUserByDeviceId("11").UserId;
-            var id4 = _userRepository.GetUserByDeviceId("12").UserId;
-
-            var times = GetTimes();
-            var id = id1;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-
-
-            id = id2;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 2,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 3,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 4,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-
-
-            id = id3;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 4,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 3,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 8,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
-
-
-            id = id4;
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 9,
-                Longitude = 1,
-                UserId = id,
-                Time = times[0]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 3.5,
-                Longitude = 1,
-                UserId = id,
-                Time = times[1]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 9.5,
-                Longitude = 1,
-                UserId = id,
-                Time = times[2]
-            });
-            _locationRepository.AddLocation(new LocationDao
-            {
-                Latitude = 1.5,
-                Longitude = 1,
-                UserId = id,
-                Time = times[3]
-            });
+            start = DateTime.Now;
+            var contacted2 = users
+                .SelectMany(u => _infectionManager.CubeCheckUserWhoHadContact(u))
+                .Distinct()
+                .ToList();
+            var diff2 = (DateTime.Now - start).TotalMilliseconds;
+            return $"{contacted1.Count} - {diff1}\n{contacted2.Count} - {diff2}";
         }
     }
 }
