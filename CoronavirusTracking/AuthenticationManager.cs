@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 using System.Text;
+using Coronavirus.Database;
 using Coronavirus.Database.Entities;
 using Coronavirus.Database.Repository;
 using CoronavirusTracking.Dtos;
@@ -14,12 +15,14 @@ namespace CoronavirusTracking
         private const string Secret = "1234";
 
         private readonly IMemoryCache _cache;
-        private readonly AuthRepository _authRepository = new AuthRepository();
-        private readonly UserRepository _userRepository = new UserRepository();
+        private readonly AuthRepository _authRepository;
+        private readonly UserRepository _userRepository;
 
-        public AuthenticationManager(IMemoryCache memoryCache)
+        public AuthenticationManager(IMemoryCache memoryCache, CoronaContext coronaContext)
         {
             _cache = memoryCache;
+            _authRepository = new AuthRepository(coronaContext);
+            _userRepository = new UserRepository(coronaContext);
         }
 
         public string GetToken(string login, string password)

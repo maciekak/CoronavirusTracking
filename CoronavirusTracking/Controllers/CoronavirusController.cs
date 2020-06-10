@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Coronavirus.Daos;
+using Coronavirus.Database;
 using Coronavirus.Database.Entities;
 using Coronavirus.Database.Managers;
 using Coronavirus.Database.Repository;
@@ -14,14 +15,17 @@ namespace CoronavirusTracking.Controllers
     [ApiController]
     public class CoronavirusController : ControllerBase
     {
-        private readonly UserRepository _userRepository = new UserRepository();
-        private readonly LocationRepository _locationRepository = new LocationRepository();
-        private readonly InfectionManager _infectionManager = new InfectionManager();
+        private readonly UserRepository _userRepository;
+        private readonly LocationRepository _locationRepository;
+        private readonly InfectionManager _infectionManager;
         private readonly AuthenticationManager _authenticationManager;
 
-        public CoronavirusController(IMemoryCache memoryCache)
+        public CoronavirusController(IMemoryCache memoryCache, CoronaContext coronaContext)
         {
-            _authenticationManager = new AuthenticationManager(memoryCache);
+            _authenticationManager = new AuthenticationManager(memoryCache, coronaContext);
+            _infectionManager = new InfectionManager(coronaContext);
+            _locationRepository = new LocationRepository(coronaContext);
+            _userRepository = new UserRepository(coronaContext);
         }
 
         // POST: api/Coronavirus

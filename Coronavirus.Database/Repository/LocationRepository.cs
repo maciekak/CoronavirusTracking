@@ -19,12 +19,19 @@ namespace Coronavirus.Database.Repository
         private readonly double _latStep = 0.0006;
         private readonly TimeSpan _timeStep = new TimeSpan(0, 1, 0);
 
+        private readonly CoronaContext _coronaContext;
+
+        public LocationRepository(CoronaContext coronaContext)
+        {
+            _coronaContext = coronaContext;
+        }
+
         public void AddLocation(LocationDao location)
         {
             var latId = (int) ((location.Latitude - _latitudeDownBoundary) / _latStep);
             var longId = (int) ((location.Longitude - _longitudeDownBoundary) / _longStep);
             var timeId = (int) ((location.Time - _timeDownBoundary) / _timeStep);
-            var cube = Context.Cubes.FirstOrDefault(c =>
+            var cube = _coronaContext.Cubes.FirstOrDefault(c =>
                 c.LatId == latId && longId == c.LongId && timeId == c.TimeId);
             if (cube == null)
             {
@@ -35,7 +42,7 @@ namespace Coronavirus.Database.Repository
                     TimeId = timeId
                 };
 
-                Context.Cubes.Add(cube);
+                _coronaContext.Cubes.Add(cube);
             }
 
             var dbLocation = new Location
@@ -46,12 +53,11 @@ namespace Coronavirus.Database.Repository
                 LatId = cube.LatId,
                 LongId = cube.LongId,
                 TimeId = cube.TimeId,
-                LocationId = Context.LocationIdCounter,
                 Time = location.Time,
                 UserId = location.UserId
             };
-            Context.LocationIdCounter++;
-            Context.Locations.Add(dbLocation);
+            _coronaContext.Locations.Add(dbLocation);
+            _coronaContext.SaveChanges();
         }
 
         public IEnumerable<LocationDao> GetLocations()

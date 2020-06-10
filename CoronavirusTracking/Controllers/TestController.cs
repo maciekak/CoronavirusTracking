@@ -15,10 +15,10 @@ namespace CoronavirusTracking.Controllers
     [ApiController]
     public class TestController : ControllerBase
     {
-        private readonly UserRepository _userRepository = new UserRepository();
-        private readonly LocationRepository _locationRepository = new LocationRepository();
-        private readonly CubeRepository _cubeRepository = new CubeRepository();
-        private readonly InfectionManager _infectionManager = new InfectionManager();
+        private readonly UserRepository _userRepository;
+        private readonly LocationRepository _locationRepository;
+        private readonly CubeRepository _cubeRepository;
+        private readonly InfectionManager _infectionManager;
         private readonly CoronaContext _coronaContext;
 
         private readonly double _longitudeUpBoundary = 25.0;
@@ -34,6 +34,10 @@ namespace CoronavirusTracking.Controllers
         public TestController(CoronaContext coronaContext)
         {
             _coronaContext = coronaContext;
+            _infectionManager = new InfectionManager(_coronaContext);
+            _cubeRepository = new CubeRepository(_coronaContext);
+            _locationRepository = new LocationRepository(_coronaContext);
+            _userRepository = new UserRepository(_coronaContext);
         }
 
         private List<DateTime> GetTimes()
@@ -116,7 +120,7 @@ namespace CoronavirusTracking.Controllers
                 .Distinct()
                 .ToList();
             var diff2 = (DateTime.Now - start).TotalMilliseconds;
-            return $"{contacted1.Count} - {diff1}\n{contacted2.Count} - {diff2}";
+            return $"Basic: {contacted1.Count} - {diff1}\nCubes: {contacted2.Count} - {diff2}";
         }
     }
 }

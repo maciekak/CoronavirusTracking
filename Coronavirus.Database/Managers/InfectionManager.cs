@@ -10,8 +10,14 @@ namespace Coronavirus.Database.Managers
         private const int MetersDistance = 10;
         private const int LatitudeDistance = 2;
         private const int LongitudeDistance = 2;
-        private readonly TimeSpan _timeDistance = new TimeSpan(0, 0, 10); 
+        private readonly TimeSpan _timeDistance = new TimeSpan(0, 0, 10);
 
+        private readonly CoronaContext _coronaContext;
+
+        public InfectionManager(CoronaContext coronaContext)
+        {
+            _coronaContext = coronaContext;
+        }
         public void MarkMetUsersAsInfected(int userId)
         {
             //TODO: make it more efficient, because it is O(n^2) right now

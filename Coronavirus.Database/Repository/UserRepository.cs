@@ -7,6 +7,13 @@ namespace Coronavirus.Database.Repository
 {
     public class UserRepository
     {
+        private readonly CoronaContext _coronaContext;
+
+        public UserRepository(CoronaContext coronaContext)
+        {
+            _coronaContext = coronaContext;
+        }
+
         public void AddUser(string deviceId, string notificationId, bool isAdmin)
         {
             var user = new User
@@ -14,31 +21,30 @@ namespace Coronavirus.Database.Repository
                 AddDate = DateTime.Now,
                 DeviceId = deviceId,
                 NotificationId = notificationId,
-                UserType = isAdmin ? UserType.Doctor : UserType.Normal,
-                UserId = Context.UserIdCounter
+                UserType = isAdmin ? UserType.Doctor : UserType.Normal
             };
-            Context.UserIdCounter++;
-            Context.Users.Add(user);
+            _coronaContext.Users.Add(user);
+            _coronaContext.SaveChanges();
         }
 
         public IEnumerable<User> GetUsers()
         {
-            return Context.Users.ToList();
+            return _coronaContext.Users.ToList();
         }
 
         public User GetUserByDeviceId(string deviceId)
         {
-            return Context.Users.FirstOrDefault(u => u.DeviceId == deviceId);
+            return _coronaContext.Users.FirstOrDefault(u => u.DeviceId == deviceId);
         }
 
         public User GetUserByUserId(int userId)
         {
-            return Context.Users.FirstOrDefault(u => u.UserId == userId);
+            return _coronaContext.Users.FirstOrDefault(u => u.UserId == userId);
         }
 
         public IEnumerable<User> GetInfected()
         {
-            return Context.Users.Where(u => u.InfectionType != InfectionType.Healthy);
+            return _coronaContext.Users.Where(u => u.InfectionType != InfectionType.Healthy);
         }
 
         public void Clear()

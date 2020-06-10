@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Coronavirus.Database;
 using Coronavirus.Database.Entities;
 using Coronavirus.Database.Repository;
 using CoronavirusTracking.Dtos;
@@ -12,13 +13,16 @@ namespace CoronavirusTracking.Controllers
     [ApiController]
     public class AuthenticationController : ControllerBase
     {
-        private readonly UserRepository _userRepository = new UserRepository();
-        private readonly AuthRepository _authRepository = new AuthRepository();
+        private readonly UserRepository _userRepository;
+        private readonly AuthRepository _authRepository;
         private readonly AuthenticationManager _authenticationManager;
 
-        public AuthenticationController(IMemoryCache memoryCache)
+        public AuthenticationController(IMemoryCache memoryCache, CoronaContext coronaContext)
         {
-            _authenticationManager = new AuthenticationManager(memoryCache);
+            _authRepository = new AuthRepository(coronaContext);
+            _authenticationManager = new AuthenticationManager(memoryCache, coronaContext);
+            _userRepository = new UserRepository(coronaContext);
+            _authenticationManager = new AuthenticationManager(memoryCache, coronaContext);
         }
 
         // GET: api/Authentication/5
